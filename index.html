@@ -3,207 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Anatomy & Studio Light Reference</title>
+    <title>3D Anatomy Reference Studio</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #121214; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+        body { background: #0f0f13; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
         
-        /* Floating Studio UI Panel */
+        /* Studio Glassmorphism UI */
         #ui-panel {
-            position: absolute; top: 15px; left: 15px; width: 340px; max-height: 94vh;
-            background: rgba(22, 22, 26, 0.85); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
-            padding: 16px; overflow-y: auto; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: absolute; top: 16px; left: 16px; width: 350px; max-height: 95vh;
+            background: rgba(18, 18, 24, 0.88); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px;
+            padding: 16px; overflow-y: auto; z-index: 10; box-shadow: 0 16px 40px rgba(0,0,0,0.6);
         }
-        h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #fff; letter-spacing: 0.5px; }
-        .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8a8a93; margin: 14px 0 8px; border-bottom: 1px solid #2a2a30; padding-bottom: 4px; }
-        
+        h2 { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between; }
+        .status-badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; background: #2e1065; color: #c084fc; font-weight: 500; }
+        .status-badge.ok { background: #064e3b; color: #6ee7b7; }
+        .status-badge.warn { background: #78350f; color: #fcd34d; }
+
+        .tabs { display: flex; gap: 4px; margin: 12px 0; background: #16161f; padding: 3px; border-radius: 8px; }
+        .tab { flex: 1; text-align: center; padding: 6px 0; font-size: 11px; border-radius: 6px; cursor: pointer; color: #94a3b8; transition: all 0.2s; }
+        .tab.active { background: #272738; color: #fff; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 14px 0 6px; border-bottom: 1px solid #232330; padding-bottom: 4px; }
         .control-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 12px; color: #b5b5be; display: flex; justify-content: space-between; }
-        select, input[type="range"], button {
-            background: #1e1e24; color: #fff; border: 1px solid #32323a;
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        
+        label { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }
+        select, input[type="range"], input[type="color"], button {
+            background: #1c1c28; color: #f8fafc; border: 1px solid #333346;
             border-radius: 6px; padding: 6px 8px; font-size: 12px; outline: none;
         }
         select:focus, button:hover { border-color: #6366f1; }
-        input[type="range"] { -webkit-appearance: none; height: 4px; background: #32323a; border-radius: 2px; padding: 0; }
+        input[type="range"] { -webkit-appearance: none; height: 4px; background: #2d2d3f; border-radius: 2px; padding: 0; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #6366f1; cursor: pointer; }
-        
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
-        button { cursor: pointer; background: #2b2b36; transition: background 0.2s; }
+        button { cursor: pointer; background: #252536; transition: background 0.2s; font-weight: 500; }
         button.primary { background: #4f46e5; border-color: #6366f1; }
-        button:hover { background: #3b3b4a; }
+        button:hover { background: #35354a; }
         button.primary:hover { background: #4338ca; }
         
-        /* Tabs */
-        .tabs { display: flex; gap: 4px; margin-bottom: 12px; background: #18181c; padding: 3px; border-radius: 8px; }
-        .tab { flex: 1; text-align: center; padding: 6px 0; font-size: 11px; border-radius: 6px; cursor: pointer; color: #8a8a93; }
-        .tab.active { background: #282832; color: #fff; font-weight: 500; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        /* Loading Overlay */
+        #loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(12, 12, 16, 0.85); backdrop-filter: blur(8px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; color: #cbd5e1; font-size: 13px;
+        }
+        .spinner { width: 36px; height: 36px; border: 3px solid #272738; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
-    <!-- Three.js and OrbitControls -->
+    <!-- Three.js + OrbitControls + GLTFLoader + JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Loading Models & Studio Environment...</p>
+    </div>
+
     <div id="canvas-container"></div>
 
     <div id="ui-panel">
-        <h2>Anatomy Studio 3D</h2>
+        <h2>
+            Anatomy Studio 3D
+            <span id="zip-badge" class="status-badge warn">ZIP Checking...</span>
+        </h2>
+
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('tab-morph')">Model</div>
+            <div class="tab active" onclick="switchTab('tab-model')">Model</div>
             <div class="tab" onclick="switchTab('tab-pose')">Posing</div>
             <div class="tab" onclick="switchTab('tab-light')">Lighting</div>
+            <div class="tab" onclick="switchTab('tab-file')">Data</div>
         </div>
 
-        <!-- TAB 1: Morphology & View Mode -->
-        <div id="tab-morph" class="tab-content active">
-            <div class="section-title">View Mode (ပန်းချီစတိုင်)</div>
+        <!-- TAB 1: MODEL SELECTOR -->
+        <div id="tab-model" class="tab-content active">
+            <div class="section-title">Anatomy Subject (မော်ဒယ်ရွေးရန်)</div>
             <div class="control-group">
-                <select id="view-mode" onchange="updateMaterials()">
+                <label>Ethnic Archetype (လူမျိုး):</label>
+                <select id="sel-ethnic" onchange="onModelChange()">
+                    <option value="african">African</option>
+                    <option value="asian" selected>Asian</option>
+                    <option value="caucasian">Caucasian</option>
+                </select>
+            </div>
+            <div class="grid-2">
+                <div class="control-group">
+                    <label>Gender (ကျား/မ):</label>
+                    <select id="sel-gender" onchange="onModelChange()">
+                        <option value="male" selected>Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Age (အသက်အရွယ်):</label>
+                    <select id="sel-age" onchange="onModelChange()">
+                        <option value="adult" selected>Adult (~30)</option>
+                        <option value="teen">Teen (13-16)</option>
+                        <option value="child">Child (5-7)</option>
+                        <option value="toddler">Toddler (1-2)</option>
+                        <option value="elderly">Elderly (~70)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">Shading & View Mode (ပန်းချီစတိုင်)</div>
+            <div class="control-group">
+                <select id="sel-shading" onchange="applyShadingMode(this.value)">
                     <option value="planar">Planar / Asaro (Planes of Light)</option>
-                    <option value="smooth">Smooth Clay (သန့်စင်သော ထုထည်)</option>
+                    <option value="clay" selected>Smooth Clay (ပလာစတာရုပ်တုစတိုင်)</option>
                     <option value="ecorche">Ecorché (ကြွက်သားလွှာစတိုင်)</option>
                     <option value="wireframe">Armature / Wireframe</option>
+                    <option value="original">Original Textures</option>
                 </select>
             </div>
 
-            <div class="section-title">Ethnic Archetype (ဦးခေါင်းအရိုး)</div>
+            <div class="section-title">Body Height & Proportion (အရပ်အမောင်း)</div>
             <div class="control-group">
-                <select id="ethnic-type" onchange="applyEthnicMorph()">
-                    <option value="east-asian">East / Southeast Asian (ပြန့်သောမျက်နှာပြင်)</option>
-                    <option value="caucasian">Caucasian (မြင့်သောနှာတံ၊ မျက်တွင်းနက်)</option>
-                    <option value="african">African (မေးရိုးရှေ့ထွက်၊ နှာခြေပြန့်)</option>
-                    <option value="south-asian">South Asian (ဝိုင်းသောမျက်လုံး၊ ထင်ရှားသောနှာတံ)</option>
-                </select>
-            </div>
-
-            <div class="section-title">Age Proportions (အသက်အရွယ် အချိုး)</div>
-            <div class="control-group">
-                <select id="age-group" onchange="applyAgeMorph()">
-                    <option value="adult" selected>Adult (၇.၅ - ၈ Heads)</option>
-                    <option value="toddler">Toddler (၄ Heads - ကလေးငယ်)</option>
-                    <option value="child">Child (၅ - ၆ Heads)</option>
-                    <option value="adolescent">Adolescent (၆.၅ - ၇ Heads)</option>
-                    <option value="elderly">Elderly (ကျောကုန်း၊ ကျုံ့သွားသောအရိုး)</option>
-                </select>
-            </div>
-
-            <div class="section-title">Somatotype (ခန္ဓာကိုယ်ပုံစံ)</div>
-            <div class="control-group">
-                <label>Muscle / Fat Build: <span id="val-soma">Normal</span></label>
-                <select id="somatotype" onchange="applySomatotype()">
-                    <option value="meso">Mesomorph (ကြွက်သား/ပခုံးကျယ်)</option>
-                    <option value="ecto">Ectomorph (ပိန်သွယ်/အရိုးပေါ်လွင်)</option>
-                    <option value="endo">Endomorph (အဆီပို/လုံးဝန်းထုထည်)</option>
-                </select>
+                <label>Overall Height: <span id="val-height">100%</span></label>
+                <input type="range" id="height-slider" min="70" max="130" value="100" oninput="adjustHeight(this.value)">
             </div>
         </div>
 
-        <!-- TAB 2: Posing & Joints -->
+        <!-- TAB 2: POSING & BONES -->
         <div id="tab-pose" class="tab-content">
             <div class="section-title">Preset Poses (အသုံးများသော ကိုယ်ဟန်)</div>
             <div class="control-group">
-                <select id="pose-preset" onchange="applyPresetPose(this.value)">
+                <select id="sel-pose" onchange="applyPresetPose(this.value)">
                     <option value="neutral">Neutral A-Pose</option>
-                    <option value="contrapposto">Contrapposto (ဂန္ထဝင် အလေးပေးရပ်ဟန်)</option>
-                    <option value="sitting">Sitting Relaxed (ထိုင်ဟန်)</option>
-                    <option value="dynamic">Dynamic Action (လှုပ်ရှားဟန်)</option>
+                    <option value="contrapposto" selected>Contrapposto (ဂန္ထဝင် အလေးပေးရပ်ဟန်)</option>
+                    <option value="sitting">Sitting (ထိုင်ဟန်)</option>
+                    <option value="action">Dynamic Walk (လှုပ်ရှားဟန်)</option>
                 </select>
             </div>
 
-            <div class="section-title">Fine-tune Dynamic Move (အဆစ်လှည့်ရန်)</div>
+            <div class="section-title">Dynamic Move / FK (အဆစ်လှည့်ရန်)</div>
             <div class="control-group">
                 <label>Select Joint (လှုပ်မည့်နေရာ):</label>
-                <select id="joint-select" onchange="loadJointRotations()">
-                    <option value="head">Head (ဦးခေါင်း)</option>
-                    <option value="spine">Spine / Torso (ခါး/ကျောရိုး)</option>
-                    <option value="l_shoulder">Left Arm (ဘယ်လက်မောင်း)</option>
-                    <option value="r_shoulder">Right Arm (ညာလက်မောင်း)</option>
-                    <option value="l_elbow">Left Forearm (ဘယ်လက်ဖျံ)</option>
-                    <option value="r_elbow">Right Forearm (ညာလက်ဖျံ)</option>
-                    <option value="l_hip">Left Leg (ဘယ်ပေါင်)</option>
-                    <option value="r_hip">Right Leg (ညာပေါင်)</option>
-                    <option value="l_knee">Left Knee (ဘယ်ဒူး)</option>
-                    <option value="r_knee">Right Knee (ညာဒူး)</option>
-                </select>
+                <select id="sel-bone" onchange="loadBoneRotations()"></select>
             </div>
             <div class="control-group">
-                <label>Rotate X (ရှေ့/နောက် ကွေး): <span id="val-rx">0°</span></label>
-                <input type="range" id="rot-x" min="-90" max="90" value="0" oninput="updateJointRotation()">
+                <label>Rotate X: <span id="val-rx">0°</span></label>
+                <input type="range" id="rot-x" min="-120" max="120" value="0" oninput="updateBoneRotation()">
             </div>
             <div class="control-group">
-                <label>Rotate Y (ဘယ်/ညာ လှည့်): <span id="val-ry">0°</span></label>
-                <input type="range" id="rot-y" min="-90" max="90" value="0" oninput="updateJointRotation()">
+                <label>Rotate Y: <span id="val-ry">0°</span></label>
+                <input type="range" id="rot-y" min="-120" max="120" value="0" oninput="updateBoneRotation()">
             </div>
             <div class="control-group">
-                <label>Rotate Z (ဘေးဘက် စောင်း): <span id="val-rz">0°</span></label>
-                <input type="range" id="rot-z" min="-90" max="90" value="0" oninput="updateJointRotation()">
+                <label>Rotate Z: <span id="val-rz">0°</span></label>
+                <input type="range" id="rot-z" min="-120" max="120" value="0" oninput="updateBoneRotation()">
             </div>
-            <button onclick="resetCurrentJoint()" style="margin-top: 6px;">Reset Current Joint</button>
+            <div class="grid-2">
+                <button onclick="resetCurrentBone()">Reset Joint</button>
+                <button onclick="applyPresetPose(document.getElementById('sel-pose').value)">Reset Pose</button>
+            </div>
         </div>
 
-        <!-- TAB 3: Studio Lighting Setup -->
+        <!-- TAB 3: THREE-POINT STUDIO LIGHTING -->
         <div id="tab-light" class="tab-content">
             <div class="section-title">Lighting Setup Preset</div>
             <div class="control-group">
-                <select id="light-preset" onchange="applyLightingPreset(this.value)">
-                    <option value="studio">Classic 3-Point Studio (Key, Fill, Rim)</option>
+                <select id="sel-light-preset" onchange="applyLightingPreset(this.value)">
+                    <option value="studio" selected>Classic 3-Point Studio (Default)</option>
                     <option value="daylight">Daylight / Natural Sun (သဘာဝနေရောင်)</option>
-                    <option value="stage">Stage / Dramatic Rim (ပြဇာတ်မီးစတိုင်)</option>
+                    <option value="stage">Dramatic Stage Light (ပြဇာတ်မီး)</option>
                 </select>
             </div>
 
             <div class="section-title">Key Light (အဓိကမီး)</div>
             <div class="control-group">
-                <label>Intensity (အလင်းပြင်းအား):</label>
-                <input type="range" id="key-intensity" min="0" max="3" step="0.1" value="1.3" oninput="updateLights()">
+                <label>Angle (ပတ်လည်ဒီကရီ):</label>
+                <input type="range" id="key-angle" min="0" max="360" value="45" oninput="updateLights()">
             </div>
             <div class="control-group">
-                <label>Orbit Angle (ပတ်လည်နေရာ):</label>
-                <input type="range" id="key-angle" min="0" max="360" value="45" oninput="updateLights()">
+                <label>Intensity (အလင်းပြင်းအား):</label>
+                <input type="range" id="key-intensity" min="0" max="3.5" step="0.1" value="1.5" oninput="updateLights()">
             </div>
 
             <div class="section-title">Fill Light (အရိပ်ဖွင့်မီး)</div>
             <div class="control-group">
                 <label>Intensity:</label>
-                <input type="range" id="fill-intensity" min="0" max="2" step="0.1" value="0.4" oninput="updateLights()">
+                <input type="range" id="fill-intensity" min="0" max="2" step="0.05" value="0.45" oninput="updateLights()">
             </div>
 
             <div class="section-title">Rim Light (အနားသတ်ဖြတ်မီး)</div>
             <div class="control-group">
                 <label>Intensity:</label>
-                <input type="range" id="rim-intensity" min="0" max="3" step="0.1" value="1.8" oninput="updateLights()">
+                <input type="range" id="rim-intensity" min="0" max="4" step="0.1" value="2.2" oninput="updateLights()">
             </div>
 
-            <div class="btn-row">
-                <button class="primary" onclick="resetLights()">Reset Lighting</button>
-            </div>
+            <button class="primary" style="margin-top: 10px; width: 100%;" onclick="resetLights()">Reset to Default Lighting</button>
+        </div>
+
+        <!-- TAB 4: DATA & ZIP MANAGEMENT -->
+        <div id="tab-file" class="tab-content">
+            <div class="section-title">ZIP Source (.zip ထည့်ရန်)</div>
+            <p style="font-size: 11px; color: #94a3b8; line-height: 1.5; margin-bottom: 10px;">
+                GitHub Pages တွင် <code>models.zip</code> အမည်ဖြင့် တင်ထားပါက အလိုအလျောက် ချိတ်ဆက်ပါသည်။ စမ်းသပ်ရန် ZIP ဖိုင်ကို တိုက်ရိုက် ရွေးချယ်နိုင်ပါသည်-
+            </p>
+            <input type="file" id="zip-input" accept=".zip" onchange="onZipFileUploaded(event)" style="width: 100%;">
         </div>
     </div>
 
     <script>
-        // Tab Switcher
-        function switchTab(tabId) {
+        // TAB SWITCHER
+        function switchTab(id) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
-        // Three.js Core Setup
-        let scene, camera, renderer, controls;
-        let mannequin = {}, materials = {};
-        let keyLight, fillLight, rimLight, ambientLight;
+        // EXACT MODEL MANIFEST (Screenshot ပါ ဖိုင်အမည် ၃၀ လုံး)
+        const MODEL_MANIFEST = {
+            african: {
+                female: {
+                    adult: "african female_adult.glb",
+                    child: "African Female_Child.glb",
+                    elderly: "African Female_Elderly.glb",
+                    teen: "African Female_Teen.glb",
+                    toddler: "African Female_Toddler.glb"
+                },
+                male: {
+                    adult: "african male_adult.glb",
+                    child: "African Male_Child.glb",
+                    elderly: "African Male_Elderly.glb",
+                    teen: "African Male_Teen.glb",
+                    toddler: "African Male_Toddler.glb"
+                }
+            },
+            asian: {
+                female: {
+                    adult: "asian female_adult.glb",
+                    child: "Asian Female_Child.glb",
+                    elderly: "Asian Female_Elderly.glb",
+                    teen: "Asian Female_Teen.glb",
+                    toddler: "Asian Female_Toddler.glb"
+                },
+                male: {
+                    adult: "asian male_adult.glb",
+                    child: "Asian Male_Child.glb",
+                    elderly: "Asian Male_Elderly.glb",
+                    teen: "Asian Male_Teen.glb",
+                    toddler: "Asian Male_Toddler.glb"
+                }
+            },
+            caucasian: {
+                female: {
+                    adult: "caucasian female_adult.glb",
+                    child: "Caucasia Female_Child.glb",
+                    elderly: "Caucasian Female_Elderly.glb",
+                    teen: "Caucasia Female_Teen.glb",
+                    toddler: "Caucasian Female_Toddler.glb"
+                },
+                male: {
+                    adult: "caucasian male_adult.glb",
+                    child: "Caucasia Male_Child.glb",
+                    elderly: "Caucasian Male_Elderly.glb",
+                    teen: "Caucasia Male_Teen.glb",
+                    toddler: "Caucasian Male_Toddler.glb"
+                }
+            }
+        };
 
+        let scene, camera, renderer, controls;
+        let characterModel, bones = {}, originalMaterials = new Map();
+        let keyLight, fillLight, rimLight, ambientLight;
+        let loadedZip = null;
+
+        const gltfLoader = new THREE.GLTFLoader();
+
+        function showLoading(msg) {
+            document.getElementById('loading-text').innerText = msg;
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // THREE.JS SCENE SETUP
         function init() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x141418);
+            scene.background = new THREE.Color(0x111116);
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 1.3, 4.2);
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.4, 3.8);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -214,187 +305,47 @@
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 1.0, 0);
+            controls.target.set(0, 0.9, 0);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
 
-            // Ground plane (Shadow catcher)
-            const floorGeo = new THREE.PlaneGeometry(12, 12);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x181820, roughness: 0.85 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
+            // Studio Ground Floor & Grid
+            const floor = new THREE.Mesh(
+                new THREE.PlaneGeometry(12, 12),
+                new THREE.MeshStandardMaterial({ color: 0x161620, roughness: 0.88 })
+            );
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            setupMaterials();
-            setupLights();
-            buildRiggedMannequin();
-            applyPresetPose('contrapposto');
+            const grid = new THREE.GridHelper(10, 20, 0x2e2e42, 0x1f1f2e);
+            grid.position.y = 0.001;
+            scene.add(grid);
 
+            setupLights();
             window.addEventListener('resize', onWindowResize);
             animate();
+
+            // Auto-load ./models.zip if present
+            tryAutoLoadZip();
         }
 
-        // Materials setup for Asaro, Clay, Ecorché
-        function setupMaterials() {
-            materials.planar = new THREE.MeshStandardMaterial({
-                color: 0xd8d8df, roughness: 0.45, metalness: 0.05, flatShading: true
-            });
-            materials.smooth = new THREE.MeshStandardMaterial({
-                color: 0xdfd3c3, roughness: 0.6, metalness: 0.0, flatShading: false
-            });
-            materials.ecorche = new THREE.MeshStandardMaterial({
-                color: 0x8b3a3a, roughness: 0.5, metalness: 0.1, flatShading: true
-            });
-            materials.wireframe = new THREE.MeshBasicMaterial({
-                color: 0x6366f1, wireframe: true
-            });
-        }
-
-        function updateMaterials() {
-            const mode = document.getElementById('view-mode').value;
-            const targetMat = materials[mode];
-            traverseMannequin(mannequin.root, mesh => {
-                if (mesh.isMesh) mesh.material = targetMat;
-            });
-        }
-
-        // Hierarchical Anatomy Rig Setup
-        function buildRiggedMannequin() {
-            const root = new THREE.Group();
-            root.position.y = 0.95; // Pelvis height
-
-            // Pelvis
-            const pelvis = createPlanarBox(0.28, 0.18, 0.22);
-            pelvis.castShadow = true;
-            root.add(pelvis);
-
-            // Spine & Torso
-            const spine = new THREE.Group();
-            spine.position.y = 0.12;
-            root.add(spine);
-
-            const torso = createPlanarBox(0.32, 0.28, 0.22);
-            torso.position.y = 0.16;
-            torso.castShadow = true;
-            spine.add(torso);
-
-            // Neck & Head
-            const neck = new THREE.Group();
-            neck.position.y = 0.32;
-            spine.add(neck);
-
-            // Asaro Head Group (Faceted geometry)
-            const head = new THREE.Group();
-            head.position.y = 0.12;
-            neck.add(head);
-
-            const cranium = new THREE.Mesh(new THREE.DodecahedronGeometry(0.12, 1), materials.planar);
-            cranium.scale.set(1.0, 1.2, 1.05);
-            cranium.castShadow = true;
-            head.add(cranium);
-
-            // Facial Plane wedge
-            const jaw = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.15, 5), materials.planar);
-            jaw.rotation.x = Math.PI;
-            jaw.position.set(0, -0.06, 0.04);
-            jaw.castShadow = true;
-            head.add(jaw);
-
-            // Arms (Left & Right)
-            const l_shoulder = new THREE.Group();
-            l_shoulder.position.set(0.22, 0.26, 0);
-            spine.add(l_shoulder);
-            const l_arm = createLimb(0.08, 0.26, true);
-            l_shoulder.add(l_arm);
-
-            const l_elbow = new THREE.Group();
-            l_elbow.position.y = -0.26;
-            l_shoulder.add(l_elbow);
-            const l_forearm = createLimb(0.07, 0.24, true);
-            l_elbow.add(l_forearm);
-
-            const r_shoulder = new THREE.Group();
-            r_shoulder.position.set(-0.22, 0.26, 0);
-            spine.add(r_shoulder);
-            const r_arm = createLimb(0.08, 0.26, true);
-            r_shoulder.add(r_arm);
-
-            const r_elbow = new THREE.Group();
-            r_elbow.position.y = -0.26;
-            r_shoulder.add(r_elbow);
-            const r_forearm = createLimb(0.07, 0.24, true);
-            r_elbow.add(r_forearm);
-
-            // Legs (Left & Right)
-            const l_hip = new THREE.Group();
-            l_hip.position.set(0.1, -0.05, 0);
-            root.add(l_hip);
-            const l_thigh = createLimb(0.11, 0.44, true);
-            l_hip.add(l_thigh);
-
-            const l_knee = new THREE.Group();
-            l_knee.position.y = -0.44;
-            l_hip.add(l_knee);
-            const l_calf = createLimb(0.09, 0.42, true);
-            l_knee.add(l_calf);
-
-            const r_hip = new THREE.Group();
-            r_hip.position.set(-0.1, -0.05, 0);
-            root.add(r_hip);
-            const r_thigh = createLimb(0.11, 0.44, true);
-            r_hip.add(r_thigh);
-
-            const r_knee = new THREE.Group();
-            r_knee.position.y = -0.44;
-            r_hip.add(r_knee);
-            const r_calf = createLimb(0.09, 0.42, true);
-            r_knee.add(r_calf);
-
-            scene.add(root);
-
-            // References mapped for joint manipulation
-            mannequin = {
-                root, pelvis, spine, torso, neck, head,
-                cranium, jaw,
-                l_shoulder, l_elbow, r_shoulder, r_elbow,
-                l_hip, l_knee, r_hip, r_knee
-            };
-        }
-
-        function createPlanarBox(w, h, d) {
-            const geo = new THREE.BoxGeometry(w, h, d, 2, 2, 2);
-            return new THREE.Mesh(geo, materials.planar);
-        }
-
-        function createLimb(radius, length, shadow = true) {
-            const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius*0.8, radius, length, 6), materials.planar);
-            mesh.position.y = -length / 2;
-            mesh.castShadow = shadow;
-            return mesh;
-        }
-
-        function traverseMannequin(obj, callback) {
-            if (!obj) return;
-            obj.traverse(callback);
-        }
-
-        // Studio Three-Point Lighting Setup
+        // THREE-POINT LIGHTING SYSTEM
         function setupLights() {
-            ambientLight = new THREE.AmbientLight(0x202028, 0.6);
+            ambientLight = new THREE.AmbientLight(0x22222e, 0.6);
             scene.add(ambientLight);
 
-            keyLight = new THREE.DirectionalLight(0xfff3e0, 1.3);
+            keyLight = new THREE.DirectionalLight(0xfff3e3, 1.5);
             keyLight.castShadow = true;
             keyLight.shadow.mapSize.width = 1024;
             keyLight.shadow.mapSize.height = 1024;
             keyLight.shadow.bias = -0.001;
             scene.add(keyLight);
 
-            fillLight = new THREE.DirectionalLight(0x90b0ff, 0.4);
+            fillLight = new THREE.DirectionalLight(0x8eb3ff, 0.45);
             scene.add(fillLight);
 
-            rimLight = new THREE.DirectionalLight(0xffffff, 1.8);
+            rimLight = new THREE.DirectionalLight(0xffffff, 2.2);
+            rimLight.position.set(0, 2.6, -3.0);
             scene.add(rimLight);
 
             updateLights();
@@ -402,27 +353,24 @@
 
         function updateLights() {
             const angle = THREE.MathUtils.degToRad(parseFloat(document.getElementById('key-angle').value));
-            const dist = 3.5;
+            const dist = 3.6;
             keyLight.position.set(Math.cos(angle) * dist, 2.5, Math.sin(angle) * dist);
             keyLight.intensity = parseFloat(document.getElementById('key-intensity').value);
 
-            // Fill light placed opposite to Key Light
-            fillLight.position.set(-Math.cos(angle) * dist, 1.5, -Math.sin(angle) * 0.5 * dist);
+            fillLight.position.set(-Math.cos(angle) * dist, 1.5, -Math.sin(angle) * 0.6 * dist);
             fillLight.intensity = parseFloat(document.getElementById('fill-intensity').value);
 
-            // Rim light positioned behind model high-up
-            rimLight.position.set(0.5, 2.8, -3.0);
             rimLight.intensity = parseFloat(document.getElementById('rim-intensity').value);
         }
 
         function resetLights() {
-            document.getElementById('light-preset').value = 'studio';
+            document.getElementById('sel-light-preset').value = 'studio';
             document.getElementById('key-angle').value = 45;
-            document.getElementById('key-intensity').value = 1.3;
-            document.getElementById('fill-intensity').value = 0.4;
-            document.getElementById('rim-intensity').value = 1.8;
-            keyLight.color.setHex(0xfff3e0);
-            fillLight.color.setHex(0x90b0ff);
+            document.getElementById('key-intensity').value = 1.5;
+            document.getElementById('fill-intensity').value = 0.45;
+            document.getElementById('rim-intensity').value = 2.2;
+            keyLight.color.setHex(0xfff3e3);
+            fillLight.color.setHex(0x8eb3ff);
             rimLight.color.setHex(0xffffff);
             updateLights();
         }
@@ -432,82 +380,195 @@
                 resetLights();
             } else if (type === 'daylight') {
                 keyLight.position.set(2, 5, 2);
-                keyLight.intensity = 2.0;
+                keyLight.intensity = 2.2;
                 keyLight.color.setHex(0xfffaed);
                 fillLight.intensity = 0.7;
-                fillLight.color.setHex(0x7ea9ff); // Sky blue fill
-                rimLight.intensity = 0.2;
-                document.getElementById('key-intensity').value = 2.0;
+                fillLight.color.setHex(0x7ea9ff);
+                rimLight.intensity = 0.3;
+                document.getElementById('key-intensity').value = 2.2;
                 document.getElementById('fill-intensity').value = 0.7;
-                document.getElementById('rim-intensity').value = 0.2;
+                document.getElementById('rim-intensity').value = 0.3;
             } else if (type === 'stage') {
-                keyLight.intensity = 0.3;
+                keyLight.intensity = 0.4;
                 fillLight.intensity = 0.1;
-                rimLight.position.set(-1.5, 2.2, -2.5);
-                rimLight.intensity = 3.0;
-                rimLight.color.setHex(0x00e5ff); // Dramatic cyan rim
-                document.getElementById('key-intensity').value = 0.3;
+                rimLight.intensity = 3.5;
+                rimLight.color.setHex(0x00f0ff);
+                document.getElementById('key-intensity').value = 0.4;
                 document.getElementById('fill-intensity').value = 0.1;
-                document.getElementById('rim-intensity').value = 3.0;
+                document.getElementById('rim-intensity').value = 3.5;
             }
         }
 
-        // Posing & Forward Kinematics (FK)
-        function setJointRotation(joint, xDeg, yDeg, zDeg) {
-            if (!joint) return;
-            joint.rotation.x = THREE.MathUtils.degToRad(xDeg);
-            joint.rotation.y = THREE.MathUtils.degToRad(yDeg);
-            joint.rotation.z = THREE.MathUtils.degToRad(zDeg);
+        // ZIP EXTRACTION & MODEL PARSER
+        async function tryAutoLoadZip() {
+            showLoading("Checking models.zip in repository...");
+            try {
+                const response = await fetch('./models.zip');
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const blob = await response.blob();
+                loadedZip = await JSZip.loadAsync(blob);
+                setZipStatus(true, "models.zip loaded");
+                await onModelChange();
+            } catch (err) {
+                console.warn("Auto-load models.zip failed:", err);
+                setZipStatus(false, "No models.zip");
+                hideLoading();
+            }
         }
 
-        function applyPresetPose(pose) {
-            // Reset all joints
-            ['head','spine','l_shoulder','r_shoulder','l_elbow','r_elbow','l_hip','r_hip','l_knee','r_knee'].forEach(j => {
-                setJointRotation(mannequin[j], 0, 0, 0);
+        async function onZipFileUploaded(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showLoading("Extracting " + file.name + "...");
+            try {
+                loadedZip = await JSZip.loadAsync(file);
+                setZipStatus(true, file.name);
+                await onModelChange();
+            } catch (err) {
+                alert("ZIP file ဖတ်၍မရပါ: " + err.message);
+                hideLoading();
+            }
+        }
+
+        function setZipStatus(ok, label) {
+            const badge = document.getElementById('zip-badge');
+            badge.innerText = label;
+            badge.className = "status-badge " + (ok ? "ok" : "warn");
+        }
+
+        // Find file in ZIP ignoring folder paths & casing
+        function findEntryInZip(zip, targetName) {
+            const cleanTarget = targetName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (const path in zip.files) {
+                if (zip.files[path].dir || path.includes('__MACOSX') || path.startsWith('.')) continue;
+                const fileName = path.split('/').pop();
+                const cleanName = fileName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (cleanName === cleanTarget) return zip.files[path];
+            }
+            return null;
+        }
+
+        async function onModelChange() {
+            if (!loadedZip) {
+                alert("ကျေးဇူးပြု၍ Data tab မှတစ်ဆင့် models.zip ဖိုင်ကို အရင်ရွေးပေးပါခင်ဗျာ။");
+                return;
+            }
+            const ethnic = document.getElementById('sel-ethnic').value;
+            const gender = document.getElementById('sel-gender').value;
+            const age = document.getElementById('sel-age').value;
+
+            const targetFilename = MODEL_MANIFEST[ethnic]?.[gender]?.[age];
+            if (!targetFilename) {
+                alert("Model filename not found in manifest.");
+                return;
+            }
+
+            const zipEntry = findEntryInZip(loadedZip, targetFilename);
+            if (!zipEntry) {
+                alert("ZIP ထဲတွင် " + targetFilename + " ဖိုင် ရှာမတွေ့ပါခင်ဗျာ။");
+                return;
+            }
+
+            showLoading("Rendering " + targetFilename + "...");
+            const arrayBuffer = await zipEntry.async("arraybuffer");
+
+            gltfLoader.parse(arrayBuffer, '', (gltf) => {
+                if (characterModel) scene.remove(characterModel);
+
+                characterModel = gltf.scene;
+                bones = {};
+                originalMaterials.clear();
+
+                // Compute bounding box & align feet to ground
+                const box = new THREE.Box3().setFromObject(characterModel);
+                characterModel.position.set(0, -box.min.y, 0);
+
+                characterModel.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        originalMaterials.set(child, child.material);
+                    }
+                    if (child.isBone) {
+                        bones[child.name] = child;
+                    }
+                });
+
+                scene.add(characterModel);
+                populateBoneDropdown();
+                applyShadingMode(document.getElementById('sel-shading').value);
+                applyPresetPose(document.getElementById('sel-pose').value);
+                adjustHeight(document.getElementById('height-slider').value);
+
+                hideLoading();
+            }, (err) => {
+                alert("GLTF Parse Error: " + err);
+                hideLoading();
             });
-            mannequin.root.position.set(0, 0.95, 0);
-
-            if (pose === 'contrapposto') {
-                // Classical Greek Painterly Pose (Weight on right leg, tilted pelvis/shoulders)
-                setJointRotation(mannequin.pelvis, 0, 0, 6);
-                setJointRotation(mannequin.spine, -2, 5, -8);
-                setJointRotation(mannequin.head, 4, -12, 3);
-                setJointRotation(mannequin.r_hip, -5, 0, 2);
-                setJointRotation(mannequin.l_hip, 15, -10, -8);
-                setJointRotation(mannequin.l_knee, -25, 0, 0);
-                setJointRotation(mannequin.r_shoulder, 10, 0, 15);
-                setJointRotation(mannequin.r_elbow, -30, 0, 0);
-                setJointRotation(mannequin.l_shoulder, 5, 0, -10);
-            } else if (pose === 'sitting') {
-                mannequin.root.position.y = 0.55;
-                setJointRotation(mannequin.l_hip, -85, 5, 0);
-                setJointRotation(mannequin.r_hip, -85, -5, 0);
-                setJointRotation(mannequin.l_knee, 90, 0, 0);
-                setJointRotation(mannequin.r_knee, 90, 0, 0);
-                setJointRotation(mannequin.spine, 10, 0, 0);
-                setJointRotation(mannequin.head, -10, 0, 0);
-                setJointRotation(mannequin.l_elbow, -40, 0, 0);
-                setJointRotation(mannequin.r_elbow, -40, 0, 0);
-            } else if (pose === 'dynamic') {
-                setJointRotation(mannequin.spine, 15, -25, 0);
-                setJointRotation(mannequin.head, -10, 30, 0);
-                setJointRotation(mannequin.l_shoulder, -60, 20, 45);
-                setJointRotation(mannequin.l_elbow, -70, 0, 0);
-                setJointRotation(mannequin.r_shoulder, 45, 0, -20);
-                setJointRotation(mannequin.r_hip, -45, 10, 0);
-                setJointRotation(mannequin.r_knee, 60, 0, 0);
-                setJointRotation(mannequin.l_hip, 30, 0, -10);
-            }
-            loadJointRotations();
         }
 
-        function loadJointRotations() {
-            const jointName = document.getElementById('joint-select').value;
-            const joint = mannequin[jointName];
-            if (!joint) return;
-            const rx = Math.round(THREE.MathUtils.radToDeg(joint.rotation.x));
-            const ry = Math.round(THREE.MathUtils.radToDeg(joint.rotation.y));
-            const rz = Math.round(THREE.MathUtils.radToDeg(joint.rotation.z));
+        // SHADING / VIEW MODES
+        function applyShadingMode(mode) {
+            if (!characterModel) return;
+            characterModel.traverse((child) => {
+                if (!child.isMesh) return;
+                if (mode === 'original') {
+                    child.material = originalMaterials.get(child);
+                } else if (mode === 'planar') {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xd6d6e2, roughness: 0.4, metalness: 0.05, flatShading: true
+                    });
+                } else if (mode === 'clay') {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xdfd7cb, roughness: 0.72, metalness: 0.0, flatShading: false
+                    });
+                } else if (mode === 'ecorche') {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0x933030, roughness: 0.45, metalness: 0.08, flatShading: true
+                    });
+                } else if (mode === 'wireframe') {
+                    child.material = new THREE.MeshBasicMaterial({
+                        color: 0x6366f1, wireframe: true
+                    });
+                }
+                child.material.needsUpdate = true;
+            });
+        }
+
+        function adjustHeight(val) {
+            document.getElementById('val-height').innerText = val + '%';
+            if (!characterModel) return;
+            const scaleY = parseFloat(val) / 100.0;
+            characterModel.scale.set(1, scaleY, 1);
+        }
+
+        // BONES & POSING
+        function populateBoneDropdown() {
+            const select = document.getElementById('sel-bone');
+            select.innerHTML = '';
+            const boneNames = Object.keys(bones);
+            if (boneNames.length === 0) {
+                const opt = document.createElement('option');
+                opt.innerText = "No Rig / Bones Detected";
+                select.appendChild(opt);
+                return;
+            }
+            boneNames.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b;
+                opt.innerText = b;
+                select.appendChild(opt);
+            });
+            loadBoneRotations();
+        }
+
+        function loadBoneRotations() {
+            const name = document.getElementById('sel-bone').value;
+            const b = bones[name];
+            if (!b) return;
+            const rx = Math.round(THREE.MathUtils.radToDeg(b.rotation.x));
+            const ry = Math.round(THREE.MathUtils.radToDeg(b.rotation.y));
+            const rz = Math.round(THREE.MathUtils.radToDeg(b.rotation.z));
             document.getElementById('rot-x').value = rx;
             document.getElementById('rot-y').value = ry;
             document.getElementById('rot-z').value = rz;
@@ -516,82 +577,86 @@
             document.getElementById('val-rz').innerText = rz + '°';
         }
 
-        function updateJointRotation() {
-            const jointName = document.getElementById('joint-select').value;
-            const joint = mannequin[jointName];
-            if (!joint) return;
+        function updateBoneRotation() {
+            const name = document.getElementById('sel-bone').value;
+            const b = bones[name];
+            if (!b) return;
             const rx = parseFloat(document.getElementById('rot-x').value);
             const ry = parseFloat(document.getElementById('rot-y').value);
             const rz = parseFloat(document.getElementById('rot-z').value);
-            setJointRotation(joint, rx, ry, rz);
+            b.rotation.x = THREE.MathUtils.degToRad(rx);
+            b.rotation.y = THREE.MathUtils.degToRad(ry);
+            b.rotation.z = THREE.MathUtils.degToRad(rz);
             document.getElementById('val-rx').innerText = rx + '°';
             document.getElementById('val-ry').innerText = ry + '°';
             document.getElementById('val-rz').innerText = rz + '°';
         }
 
-        function resetCurrentJoint() {
+        function resetCurrentBone() {
             document.getElementById('rot-x').value = 0;
             document.getElementById('rot-y').value = 0;
             document.getElementById('rot-z').value = 0;
-            updateJointRotation();
+            updateBoneRotation();
         }
 
-        // Age & Head-to-Body Proportion Morphing
-        function applyAgeMorph() {
-            const age = document.getElementById('age-group').value;
-            if (age === 'toddler') { // 4 Heads ratio
-                mannequin.head.scale.set(1.45, 1.35, 1.4);
-                mannequin.spine.scale.set(1, 0.75, 1);
-                mannequin.l_hip.scale.set(1, 0.6, 1);
-                mannequin.r_hip.scale.set(1, 0.6, 1);
-                mannequin.l_shoulder.scale.set(1, 0.65, 1);
-                mannequin.r_shoulder.scale.set(1, 0.65, 1);
-            } else if (age === 'elderly') { // Kyphosis hunchback
-                mannequin.head.scale.set(1.0, 1.0, 1.0);
-                mannequin.spine.rotation.x = THREE.MathUtils.degToRad(20);
-                mannequin.head.rotation.x = THREE.MathUtils.degToRad(-15);
-                mannequin.spine.scale.set(0.95, 0.9, 0.95);
-            } else { // Adult default
-                mannequin.head.scale.set(1, 1, 1);
-                mannequin.spine.scale.set(1, 1, 1);
-                mannequin.l_hip.scale.set(1, 1, 1);
-                mannequin.r_hip.scale.set(1, 1, 1);
-                mannequin.l_shoulder.scale.set(1, 1, 1);
-                mannequin.r_shoulder.scale.set(1, 1, 1);
+        // Fuzzy Bone Resolver for Preset Poses
+        function findBone(keywords) {
+            const names = Object.keys(bones);
+            for (const kw of keywords) {
+                const match = names.find(n => n.toLowerCase().includes(kw.toLowerCase()));
+                if (match) return bones[match];
             }
+            return null;
         }
 
-        // Somatotype (Ecto, Meso, Endo) Morphing
-        function applySomatotype() {
-            const type = document.getElementById('somatotype').value;
-            if (type === 'ecto') {
-                mannequin.torso.scale.set(0.85, 1, 0.85);
-                mannequin.pelvis.scale.set(0.9, 1, 0.9);
-            } else if (type === 'meso') {
-                mannequin.torso.scale.set(1.2, 1, 1.1);
-                mannequin.pelvis.scale.set(1.0, 1, 0.95);
-            } else if (type === 'endo') {
-                mannequin.torso.scale.set(1.3, 1, 1.35);
-                mannequin.pelvis.scale.set(1.2, 1, 1.25);
-            }
+        function setRot(bone, x, y, z) {
+            if (!bone) return;
+            bone.rotation.x = THREE.MathUtils.degToRad(x);
+            bone.rotation.y = THREE.MathUtils.degToRad(y);
+            bone.rotation.z = THREE.MathUtils.degToRad(z);
         }
 
-        // Ethnic Archetype Morphing (Planes of Face)
-        function applyEthnicMorph() {
-            const ethnic = document.getElementById('ethnic-type').value;
-            if (ethnic === 'east-asian') {
-                mannequin.cranium.scale.set(1.08, 1.18, 0.98); // Flatter facial plane
-                mannequin.jaw.scale.set(1.05, 0.95, 0.95);
-            } else if (ethnic === 'caucasian') {
-                mannequin.cranium.scale.set(0.96, 1.22, 1.12); // Narrower, deeper cranium
-                mannequin.jaw.scale.set(0.92, 1.1, 1.15);
-            } else if (ethnic === 'african') {
-                mannequin.cranium.scale.set(1.0, 1.2, 1.05);
-                mannequin.jaw.scale.set(1.15, 1.05, 1.25); // Mild prognathism
-            } else if (ethnic === 'south-asian') {
-                mannequin.cranium.scale.set(0.98, 1.2, 1.05);
-                mannequin.jaw.scale.set(1.0, 1.05, 1.05);
+        function applyPresetPose(pose) {
+            // Reset all bones
+            Object.values(bones).forEach(b => b.rotation.set(0,0,0));
+
+            const head = findBone(['head']);
+            const spine = findBone(['spine2', 'spine1', 'spine', 'chest']);
+            const pelvis = findBone(['pelvis', 'hips']);
+            const l_arm = findBone(['upperarm_l', 'arm_l', 'shoulder_l']);
+            const r_arm = findBone(['upperarm_r', 'arm_r', 'shoulder_r']);
+            const l_forearm = findBone(['lowerarm_l', 'forearm_l']);
+            const r_forearm = findBone(['lowerarm_r', 'forearm_r']);
+            const l_thigh = findBone(['thigh_l', 'upleg_l']);
+            const r_thigh = findBone(['thigh_r', 'upleg_r']);
+            const l_knee = findBone(['calf_l', 'knee_l']);
+            const r_knee = findBone(['calf_r', 'knee_r']);
+
+            if (pose === 'contrapposto') {
+                setRot(pelvis, 0, 0, 5);
+                setRot(spine, -2, 5, -7);
+                setRot(head, 3, -12, 4);
+                setRot(r_thigh, -5, 0, 2);
+                setRot(l_thigh, 12, -8, -6);
+                setRot(l_knee, -24, 0, 0);
+                setRot(r_arm, 10, 0, 12);
+                setRot(r_forearm, -30, 0, 0);
+            } else if (pose === 'sitting') {
+                setRot(l_thigh, -85, 5, 0);
+                setRot(r_thigh, -85, -5, 0);
+                setRot(l_knee, 90, 0, 0);
+                setRot(r_knee, 90, 0, 0);
+                setRot(spine, 8, 0, 0);
+            } else if (pose === 'action') {
+                setRot(spine, 10, -20, 0);
+                setRot(head, -5, 25, 0);
+                setRot(l_arm, -50, 20, 30);
+                setRot(r_arm, 40, 0, -20);
+                setRot(r_thigh, -40, 10, 0);
+                setRot(r_knee, 50, 0, 0);
+                setRot(l_thigh, 25, 0, -10);
             }
+            loadBoneRotations();
         }
 
         function onWindowResize() {
